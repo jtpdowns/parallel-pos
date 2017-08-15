@@ -12,12 +12,12 @@ def noun_tagger(
         tgt_para,
         tgt_wd):
     tgt_pos = []
+    index = 0
     for sent in tgt_wd:
         tgt_pos.append([])
-        index = 0
         for wd in sent:
             tgt_pos[index].append('NOUN')
-            index = index + 1
+        index = index + 1
     return tgt_pos
 
 def embedding_tagger(
