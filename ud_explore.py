@@ -1,4 +1,5 @@
 import pandas as pd
+import seaborn as sn
 
 ### LOAD DATASET ###
 field_names = [
@@ -86,4 +87,21 @@ print('Finnish accuracy = {}'.format((finnish.pos == 'NOUN').mean()))
 print('French accuracy = {}'.format((french.pos == 'NOUN').mean()))
 print('')
 
+et_dist = english_train.pos.value_counts()/english_train.shape[0]
+ed_dist = english_dev.pos.value_counts()/english_dev.shape[0]
+fi_dist = finnish.pos.value_counts()/finnish.shape[0]
+fr_dist = french.pos.value_counts()/french.shape[0]
+
+dist_list = []
+dist_list = dist_list + list(zip(17*['english_train'], et_dist.index, et_dist.values))
+dist_list = dist_list + list(zip(17*['english_dev'], ed_dist.index, ed_dist.values))
+dist_list = dist_list + list(zip(17*['finnish'], fi_dist.index, fi_dist.values))
+dist_list = dist_list + list(zip(17*['french'], fr_dist.index, fr_dist.values))
+
+dist_df = pd.DataFrame(
+        dist_list,
+        columns=['dataset', 'tag', 'percentage'])
+
+sn.barplot(data=dist_df, x='tag', y='percentage', hue='dataset')
+sn.plt.show()
 
