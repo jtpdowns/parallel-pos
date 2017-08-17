@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+import re
 
 field_names = [
         'sentence_ix',
@@ -19,6 +20,10 @@ lang_map = {
         'en': 'English',
         'fi': 'Finnish',
         'fr': 'French'}
+
+def has_number(test_str):
+    number_re = re.compile('\d')
+    return number_re.search(test_str)
 
 def ud_load(lang_str):
     ud_format = 'ud-treebanks-v2.0/UD_{}/{}-ud-{}.conllu'
@@ -49,6 +54,8 @@ def ud_load(lang_str):
             lang_wd.append([])
             lang_pos.append([])
             counter = counter + 1
+        if has_number(row.word):
+            row.word = 'NUMBER'
         lang_wd[counter].append(row.word)
         lang_pos[counter].append(row.pos)
     return lang_wd, lang_pos
@@ -59,14 +66,24 @@ def ep_load(src_str, tgt_str):
     src_data = []
     for line in src_file.readlines():
         sent = line.strip()
-        words = [word.strip() for word in sent.split(' ')]
+        words = []
+        for word in sent.split(' '):
+            word = word.strip()
+            if has_number(word):
+                word = 'NUMBER'
+            words.append(word)
         src_data.append(words)
     src_file.close()
     tgt_file = open(ep_format.format(tgt_str, src_str, tgt_str), 'r')
     tgt_data = []
     for line in tgt_file.readlines():
         sent = line.strip()
-        words = [word.strip() for word in sent.split(' ')]
+        words = []
+        for word in sent.split(' '):
+            word = word.strip()
+            if has_number(word):
+                word = 'NUMBER'
+            words.append(word)
         tgt_data.append(words)
     tgt_file.close()
     return src_data, tgt_data
