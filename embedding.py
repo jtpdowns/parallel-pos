@@ -1,7 +1,10 @@
 # set of bilingual word embeddings
 
+import numpy as np
+
 from bisect import bisect_left
 from collections import Counter
+from os.path import exists
 from scipy.sparse import dok_matrix
 from scipy.sparse.linalg import svds
 
@@ -23,22 +26,26 @@ def get_vocabulary(in_wd, n_vocab=None):
 def bi_lsa(src_wd, tgt_wd, n_vocab=10000):
     src_v = get_vocabulary(src_wd, n_vocab=n_vocab)
     tgt_v = get_vocabulary(tgt_wd, n_vocab=n_vocab)
-    n_src = len(src_v)
-    n_tgt = len(tgt_v)
-    n_words = n_src + n_tgt
-    n_sents = len(src_wd)
-    lsa_store = dok_matrix((n_words, n_sents))
-    for sent_ix in range(n_sents):
-        for word in src_wd[sent_ix]:
-            wd_ix = get_index(src_v, word)
-            if wd_ix != -1:
-                lsa_store[wd_ix, sent_ix] += 1
-        for word in tgt_wd[sent_ix]:
-            wd_ix = get_index(tgt_v, word)
-            if wd_ix != -1:
-                lsa_store[n_src + wd_ix, sent_ix] += 1
-    u, s, vt = svds(lsa_store, k=100, return_singular_vectors='u')
-    embedding = u
+    if exists('fien_bi_lsa.npy'):
+        embedding = np.load('fien_bi_lsa.npy')
+    else:
+        n_src = len(src_v)
+        n_tgt = len(tgt_v)
+        n_words = n_src + n_tgt
+        n_sents = len(src_wd)
+        lsa_store = dok_matrix((n_words, n_sents))
+        for sent_ix in range(n_sents):
+            for word in src_wd[sent_ix]:
+                wd_ix = get_index(src_v, word)
+                if wd_ix != -1:
+                    lsa_store[wd_ix, sent_ix] += 1
+            for word in tgt_wd[sent_ix]:
+                wd_ix = get_index(tgt_v, word)
+                if wd_ix != -1:
+                    lsa_store[n_src + wd_ix, sent_ix] += 1
+        u, s, vt = svds(lsa_store, k=100, return_singular_vectors='u')
+        embedding = u
+        np.save('fien_bi_lsa.npy', embedding)
     # keep two vocabularies separate
     # because of the potential for overlap
     return src_v, tgt_v, embedding
