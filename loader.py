@@ -21,26 +21,33 @@ lang_map = {
         'fi': 'Finnish',
         'fr': 'French'}
 
-def has_number(test_str):
-    number_re = re.compile('\d')
-    return number_re.search(test_str)
+number_re = re.compile('\d')
+website_re = re.compile('^http')
+
+def clean(word):
+    if pd.isnull(word):
+        word = 'NAN'
+    elif number_re.search(word):
+        word = 'NUMBER'
+    elif website_re.match(word):
+        word = 'WEBSITE'
+    return word
 
 def ud_load(lang_str):
     ud_format = 'ud-treebanks-v2.0/UD_{}/{}-ud-{}.conllu'
     lang_train = pd.read_csv(
             ud_format.format(lang_map[lang_str], lang_str, 'train'),
             names=field_names,
-            delimiter='\t',
-            comment='#')
+            delimiter='\t')
     lang_dev = pd.read_csv(
             ud_format.format(lang_map[lang_str], lang_str, 'dev'),
             names=field_names,
-            delimiter='\t',
-            comment='#')
+            delimiter='\t')
     lang = pd.concat(
             [lang_train, lang_dev],
             ignore_index=True)
     if not np.issubdtype(lang.sentence_ix.dtype, np.number):
+        lang = lang[~lang.sentence_ix.str.startswith('#')]
         lang = lang[~lang.sentence_ix.str.contains('-')]
         lang['sentence_ix'] = pd.to_numeric(lang['sentence_ix'])
         lang = lang.reset_index(drop=True)
@@ -54,10 +61,10 @@ def ud_load(lang_str):
             lang_wd.append([])
             lang_pos.append([])
             counter = counter + 1
-        if has_number(row.word):
-            row.word = 'NUMBER'
-        lang_wd[counter].append(row.word)
-        lang_pos[counter].append(row.pos)
+        word = clean(row.word)
+        pos = row.pos
+        lang_wd[counter].append(word)
+        lang_pos[counter].append(pos)
     return lang_wd, lang_pos
 
 def ep_load(src_str, tgt_str):
@@ -68,9 +75,7 @@ def ep_load(src_str, tgt_str):
         sent = line.strip()
         words = []
         for word in sent.split(' '):
-            word = word.strip()
-            if has_number(word):
-                word = 'NUMBER'
+            word = clean(word.strip())
             words.append(word)
         src_data.append(words)
     src_file.close()
@@ -80,9 +85,7 @@ def ep_load(src_str, tgt_str):
         sent = line.strip()
         words = []
         for word in sent.split(' '):
-            word = word.strip()
-            if has_number(word):
-                word = 'NUMBER'
+            word = clean(word.strip())
             words.append(word)
         tgt_data.append(words)
     tgt_file.close()
